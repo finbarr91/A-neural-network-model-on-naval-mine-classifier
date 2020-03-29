@@ -1,0 +1,76 @@
+import tensorflow as tf
+
+from tensorflow import keras
+import pandas as pd 
+import numpy as np
+import matplotlib.pyplot as plt
+import sklearn 
+from sklearn import model_selection,preprocessing
+from sklearn .utils import shuffle
+
+
+import matplotlib.pyplot as plt
+
+# Read the dataset
+
+def read_dataset():
+    data = pd.read_csv('sonar.all-data')
+
+# Data processing 
+    x = np.array(data[data.columns[0:60]])
+    preprocessing.scale(x)
+
+    le = preprocessing.LabelEncoder()
+    y = (np.array(le.fit_transform(data[data.columns[60]])))
+    return x,y
+
+x,y = read_dataset()
+
+# To shuffle the data
+
+x,y = shuffle(x,y, random_state = 1)
+
+# Creating the train-test split of the data
+x_train, x_test,y_train,y_test = sklearn.model_selection.train_test_split(x,y, test_size=0.1)
+print(x_train.shape)
+print(y_train.shape)
+print(x_test.shape)
+print(y_test.shape)
+
+#creation the neural network model 
+
+best = []
+for _ in range(5):
+    model = keras.Sequential([
+        keras.layers.Dense(60, input_shape= (60,), activation='sigmoid'),
+        keras.layers.Dense(60,activation='sigmoid'),
+        keras.layers.Dense(60, activation='relu' ),
+        keras.layers.Dense(2, activation= 'softmax')
+
+    ])
+
+    model.compile(optimizer= 'Adam', loss= 'sparse_categorical_crossentropy', metrics= ['accuracy'])
+    
+# training the model
+    model.fit(x_train,y_train, shuffle=True, epochs=500)
+
+# To determine the accuracy of the model
+    accuracy = model.evaluate(x_test,y_test)
+
+    if accuracy>best:
+        best =accuracy
+        print('Tested accuracy', accuracy)
+
+# Saving the model
+    model.save('model.h5')
+
+# loading the saved model 
+model = keras.models.load_model('model.h5')
+
+# Making Predictions using the model created
+
+label =['Mine', 'Rock']
+prediction = model.predict(x_test)
+
+for i in range(len(prediction)):
+    print(label[np.argmax(prediction[i])], label[y_test[i]])
